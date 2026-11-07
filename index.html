@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PowerQ: prototipo simulado</title>
+<style>
+:root{--bg:#f4f5f9;--card:#fff;--ink:#1b2a4a;--mut:#5d6985;--line:#e1e5ee;--acc:#ffb000;--ok:#1f9d55;--bad:#d64545;--c1:#2f6fed;--c2:#e69500;--c3:#1f9d55;--c4:#b04fd1;--wa:#dcf8c6;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1930;--card:#1b2a4a;--ink:#eef1f8;--mut:#a3aec8;--line:#2d3d62;--wa:#1f4d3a;--c1:#6b9bff;--c2:#ffb000;--c3:#4cc884;--c4:#d58bf0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1930;--card:#1b2a4a;--ink:#eef1f8;--mut:#a3aec8;--line:#2d3d62;--wa:#1f4d3a;--c1:#6b9bff;--c2:#ffb000;--c3:#4cc884;--c4:#d58bf0;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;max-width:760px;margin:0 auto;padding:16px}
+h1{margin:0;font-size:1.4rem;letter-spacing:-.02em}
+h1 i{font-style:normal;color:var(--acc)}
+h2{margin:4px 0 12px;font-size:1.5rem;letter-spacing:-.02em}
+h3{margin:0 0 10px;font-size:1rem}
+.pill{padding:5px 13px;border-radius:99px;font-size:.82rem;font-weight:700;background:var(--ok);color:#fff}
+.pill.off{background:var(--bad)}
+main{max-width:760px;margin:0 auto;padding:0 16px 110px}
+.view{display:none}.view.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px}
+.grid .card{margin:0}
+.grid b{display:block;font-size:1.6rem;line-height:1.2}
+.lbl{color:var(--mut);font-size:.82rem}
+.bar{height:14px;background:var(--line);border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:var(--ok);transition:width .5s}
+.bar.low i{background:var(--bad)}
+.hero b{font-size:2.4rem;display:block;line-height:1.1}
+.big{width:100%;min-height:60px;border:0;border-radius:14px;font-weight:800;font-size:1.15rem;font-family:inherit;background:var(--bad);color:#fff;cursor:pointer;margin-bottom:14px}
+.big.res{background:var(--ok)}
+.big:focus-visible,input:focus-visible,nav a:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.dev{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.dev:first-of-type{border-top:0}
+input[type=checkbox]{width:26px;height:26px;accent-color:var(--acc)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+.feed{max-height:250px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.msg{background:var(--wa);padding:9px 12px;border-radius:4px 14px 14px 14px;font-size:.92rem;max-width:92%}
+.msg small{display:block;text-align:right;color:var(--mut);font-size:.72rem}
+svg{width:100%;height:auto;display:block}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav a{flex:1;text-align:center;padding:10px 4px;color:var(--mut);text-decoration:none;font-size:.82rem;font-weight:600}
+nav a span{display:block;font-size:1.3rem}
+nav a.on{color:var(--ink);box-shadow:inset 0 3px 0 var(--acc)}
+#toast{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;transform:translate(-50%,-140%);width:min(92%,420px);background:var(--ink);color:var(--bg);padding:11px 14px;border-radius:12px;font-size:.9rem;transition:transform .3s;z-index:5}
+#toast.on{transform:translate(-50%,0)}
+.note{text-align:center;margin-top:6px}
+button.link{background:none;border:0;color:var(--mut);text-decoration:underline;cursor:pointer;font:inherit;font-size:.82rem;padding:6px 0}
+@media (prefers-reduced-motion:reduce){.bar i,#toast{transition:none}}
+</style>
+</head>
+<body>
+<header><h1><i>⚡</i> PowerQ</h1><span id="pill" class="pill">Luz presente</span></header>
+<div id="toast" role="status" aria-live="polite"></div>
+<main>
+<section id="v-dashboard" class="view on">
+  <div class="card hero"><span class="lbl">Estado de la red eléctrica</span><b id="d-status">Todo normal</b><span id="d-sub" class="lbl"></span>
+    <div style="margin-top:14px"><div class="lbl">Batería <b id="d-batt" style="display:inline;font-size:1rem">100 %</b></div><div id="d-barw" class="bar"><i id="d-bar"></i></div></div></div>
+  <div class="grid">
+    <div class="card"><span class="lbl">Autonomía estimada</span><b id="d-aut">—</b></div>
+    <div class="card"><span class="lbl">Carga conectada</span><b id="d-load">0 W</b></div>
+    <div class="card"><span class="lbl">Apagones registrados</span><b id="d-count">0</b></div>
+    <div class="card"><span class="lbl">Tiempo total sin luz</span><b id="d-total">0 s</b></div>
+  </div>
+  <div class="card"><h3>Historial de apagones</h3><div id="d-hist"></div><button id="clr" class="link">Borrar historial</button></div>
+</section>
+
+<section id="v-simulacion" class="view">
+  <h2>Simulación del apagón</h2>
+  <button id="btn" class="big">⚡ Cortar luz</button>
+  <div class="grid">
+    <div class="card"><span class="lbl">Batería</span><b id="s-batt">100 %</b><div id="s-barw" class="bar" style="margin-top:8px"><i id="s-bar"></i></div></div>
+    <div class="card"><span class="lbl">Autonomía estimada</span><b id="s-aut">—</b></div>
+    <div class="card"><span class="lbl">Carga conectada</span><b id="s-load">0 W</b></div>
+  </div>
+  <p id="s-dur" class="lbl" style="margin:0 0 12px"></p>
+  <div class="card"><h3>Equipos conectados al UPS</h3><div id="devs"></div></div>
+  <div class="card"><h3>Alertas de WhatsApp (vista simulada)</h3><div id="feed" class="feed"></div></div>
+</section>
+
+<section id="v-consumo" class="view">
+  <h2>Consumo por dispositivo</h2>
+  <div class="card"><span class="lbl">Consumo total ahora</span><b id="c-total" style="display:block;font-size:2.2rem">0 W</b>
+    <svg viewBox="0 0 300 130" role="img" aria-label="Gráfica de consumo por dispositivo en los últimos 60 segundos"><g id="chart"></g></svg>
+    <span class="lbl">Últimos 60 segundos</span></div>
+  <div class="card"><h3>Detalle por equipo</h3><div id="bars"></div></div>
+</section>
+<p class="lbl note">Prototipo simulado. Batería de 84 Wh (referencia: 12 V y 7 Ah), eficiencia del 85 %, tiempo acelerado ×30. Los valores de consumo son típicos y variables.</p>
+</main>
+<nav>
+  <a id="t-dashboard" href="#dashboard" class="on"><span>📊</span>Dashboard</a>
+  <a id="t-simulacion" href="#simulacion"><span>🔌</span>Simulación</a>
+  <a id="t-consumo" href="#consumo"><span>📈</span>Consumo</a>
+</nav>
+<script>
+const $=i=>document.getElementById(i);
+const SPEED=30,WH=84,EFF=.85,N=60;
+const D=[{id:'pc',n:'Computadora',w:120},{id:'mon',n:'Monitor',w:30},{id:'rt',n:'Router WiFi',w:12},{id:'imp',n:'Impresora',w:40}];
+const S={power:true,batt:100,on:{pc:1,mon:1,rt:1,imp:0},h:{pc:[],mon:[],rt:[],imp:[]},cur:null,msgs:[],ev:[]};
+try{S.ev=JSON.parse(localStorage.getItem('pq_ev')||'[]')}catch(e){}
+const save=()=>{try{localStorage.setItem('pq_ev',JSON.stringify(S.ev))}catch(e){}};
+const hm=d=>new Date(d).toLocaleTimeString('es-PA',{hour:'numeric',minute:'2-digit'});
+const dur=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?h+' h '+m+' min':m?m+' min '+(s%60)+' s':s+' s'};
+const dead=()=>!!(S.cur&&S.cur.dead);
+const load=()=>dead()?0:D.reduce((a,d)=>a+(S.on[d.id]?d.w:0),0);
+const autTxt=()=>{if(dead())return'0 min';const l=load();if(!l)return'—';const a=WH*EFF*S.batt/100/l*60;return a>=60?Math.floor(a/60)+' h '+Math.round(a%60)+' min':Math.round(a)+' min'};
+let tt;
+function toast(t){const e=$('toast');e.textContent='💬 '+t;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),4500)}
+function wa(t){S.msgs.push({t:Date.now(),x:t});if(S.cur)S.cur.al++;toast(t);feed()}
+function feed(){const f=$('feed');f.innerHTML=S.msgs.length?S.msgs.map(m=>'<div class="msg">'+m.x+'<small>'+hm(m.t)+'</small></div>').join(''):'<p class="lbl">Aún no hay alertas. Corta la luz para recibir la primera.</p>';f.scrollTop=1e5}
+function hist(){
+  $('d-hist').innerHTML=S.ev.length?S.ev.map(e=>'<div class="dev"><span><b>'+new Date(e.start).toLocaleString('es-PA',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})+'</b><br><span class="lbl">Batería mínima '+e.minB+' %, '+e.al+' alertas enviadas</span></span><b>'+dur(e.sim)+'</b></div>').join(''):'<p class="lbl">Sin apagones registrados. Ve a Simulación y corta la luz.</p>';
+  $('d-count').textContent=S.ev.length;$('d-total').textContent=dur(S.ev.reduce((a,e)=>a+e.sim,0));
+}
+function toggle(){
+  if(S.power){
+    S.power=false;S.cur={start:Date.now(),sim:0,minB:S.batt,al:0};
+    wa('⚡ PowerQ: se fue la luz a las '+hm(Date.now())+'. Autonomía estimada: '+autTxt()+' con '+load()+' W conectados.');
+  }else{
+    S.power=true;
+    wa('✅ PowerQ: volvió la luz a las '+hm(Date.now())+'. Duración del apagón: '+dur(S.cur.sim)+'. Batería: '+Math.round(S.batt)+' %.');
+    S.ev.unshift({start:S.cur.start,sim:S.cur.sim,minB:Math.round(S.cur.minB),al:S.cur.al});S.ev=S.ev.slice(0,30);save();S.cur=null;hist();
+  }
+  paint();
+}
+function chart(){
+  let g='';
+  [0,70,140].forEach(y=>{const py=120-y/140*110;g+='<line x1="30" x2="300" y1="'+py+'" y2="'+py+'" style="stroke:var(--line)"/><text x="0" y="'+(py+3)+'" font-size="9" style="fill:var(--mut)">'+y+' W</text>'});
+  D.forEach((d,i)=>{const a=S.h[d.id];if(a.every(v=>!v))return;
+    const p=a.map((v,j)=>(30+(N-a.length+j)*(270/(N-1))).toFixed(1)+','+(120-v/140*110).toFixed(1)).join(' ');
+    g+='<polyline points="'+p+'" fill="none" stroke-width="2" style="stroke:var(--c'+(i+1)+')"/>'});
+  $('chart').innerHTML=g;
+  const last=d=>S.h[d.id].length?S.h[d.id][S.h[d.id].length-1]:0;
+  $('c-total').textContent=Math.round(D.reduce((a,d)=>a+last(d),0))+' W';
+  $('bars').innerHTML=D.map((d,i)=>{const v=Math.round(last(d));return'<div class="dev" style="border:0;padding-bottom:4px"><span><i class="dot" style="background:var(--c'+(i+1)+')"></i>'+d.n+'</span><b>'+v+' W</b></div><div class="bar"><i style="width:'+Math.min(100,v/1.3)+'%;background:var(--c'+(i+1)+')"></i></div>'}).join('');
+}
+function paint(){
+  const p=S.power,b=Math.round(S.batt);
+  $('pill').textContent=p?'Luz presente':dead()?'UPS agotado':'Apagón';$('pill').className='pill'+(p?'':' off');
+  ['d','s'].forEach(k=>{$(k+'-batt').textContent=b+' %';$(k+'-aut').textContent=autTxt();$(k+'-load').textContent=load()+' W'});
+  ['d','s'].forEach(k=>{$(k+'-bar').style.width=b+'%';$(k+'-barw').className='bar'+(b<=20?' low':'')});
+  $('d-status').textContent=p?'Todo normal':dead()?'Sin respaldo':'Funcionando con batería';
+  $('d-sub').textContent=p?'La red eléctrica está estable.':'Apagón en curso: '+dur(S.cur.sim);
+  $('btn').textContent=p?'⚡ Cortar luz':'🔌 Restaurar luz';$('btn').className='big'+(p?'':' res');
+  $('s-dur').textContent=p?'No hay un apagón en curso.':'Tiempo sin luz: '+dur(S.cur.sim);
+  chart();
+}
+function tick(){
+  D.forEach(d=>{const v=S.on[d.id]&&!dead()?d.w*(1+(Math.random()-.5)*.1):0;const a=S.h[d.id];a.push(v);if(a.length>N)a.shift()});
+  if(!S.power){
+    const c=S.cur;c.sim+=SPEED;S.batt=Math.max(0,S.batt-load()/(WH*EFF*3600)*100*SPEED);c.minB=Math.min(c.minB,S.batt);
+    if(S.batt<=20&&!c.low){c.low=1;wa('🔋 PowerQ: batería baja ('+Math.round(S.batt)+' %). Quedan unos '+autTxt()+'.')}
+    if(S.batt<=0&&!c.dead){c.dead=1;wa('⚠️ PowerQ: el UPS se quedó sin batería. Los equipos ya no tienen respaldo.')}
+  }else if(S.batt<100)S.batt=Math.min(100,S.batt+SPEED*100/14400);
+  paint();
+}
+$('devs').innerHTML=D.map(d=>'<label class="dev"><span>'+d.n+' <span class="lbl">('+d.w+' W)</span></span><input type="checkbox" data-id="'+d.id+'"'+(S.on[d.id]?' checked':'')+'></label>').join('');
+$('devs').onchange=e=>{S.on[e.target.dataset.id]=e.target.checked?1:0;paint()};
+$('btn').onclick=toggle;
+$('clr').onclick=()=>{S.ev=[];save();hist()};
+const V=['dashboard','simulacion','consumo'];
+function route(){const h=location.hash.slice(1),v=V.includes(h)?h:'dashboard';V.forEach(x=>{$('v-'+x).classList.toggle('on',x===v);$('t-'+x).classList.toggle('on',x===v)})}
+window.addEventListener('hashchange',route);
+route();feed();hist();tick();setInterval(tick,1000);
+</script>
+</body>
+</html>
